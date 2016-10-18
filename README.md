@@ -28,7 +28,7 @@ gem install playlist_transfer
 
 
 ## Usage
-playlist_transfer if=INPUT_FILE out=OUTPUT_DIR [basedir=MUSIC_DIR] [OPTIONS]
+<pre>playlist_transfer if=INPUT_FILE out=OUTPUT_DIR [basedir=MUSIC_DIR] [OPTIONS]</pre>
 
 **INPUT_FILE** - m3u8 playlist with songs you want to transfer
 
