@@ -8,4 +8,5 @@ Gem::Specification.new do |s|
   s.email       = 'kisuke@kisuke.cz'
   s.files       = ["lib/musictrack.rb", "lib/musictrack/extensions.rb"]
   s.executables << 'playlist_transfer'
+  s.homepage    = 'https://github.com/Kisuke-CZE/playlist_transfer'
 end
