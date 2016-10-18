@@ -1,11 +1,10 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
+
 # This is script I created to put files from my Banshee managed music library to flashdrive
-# (flashdrive is used in my car radio, which reads only MP3 files and cannot read files with special characters in name)
 # It reads M3U8 playlist (defined by if=PATH_TO_PLAYLIST) and transfers files to output directory (defined by out=PATH_TO_DIRECTORY) including directory structure (Directory structure is created as relative from basedir=MUSIC_DIR)
-# If there is any FLAC file it converts it to MP3 file
-# Any other files will be just copied
-# It also removes any special characters from output file path
+# If there is any FLAC file it converts it to MP3 file (you can disable conversion by parameter --justcopy). Any other files will be just copied.
+# It can also remove any special characters from file and directory names in output path. You can do that adding parameter --compatible
 require 'pathname'
 require 'm3u8'
 require 'musictrack'
@@ -31,8 +30,8 @@ abort "Bad syntax.\nUsage: #{File.basename($0)} if=INPUT_FILE out=OUTPUT_DIR [ba
 
 Available options:
 --compatible = transfer filenames and directory names without special characters
---justcopy = do not convert FLAC files to MP3" if $input_file==nil || $output_dir==nil
-abort "Cannot read file #{$input_file.to_s} . Does it exist?" if !$input_file.expand_path.file? || !$input_file.expand_path.readable?
+--justcopy = do not convert FLAC files to MP3" unless $input_file && $output_dir
+abort "Cannot read file #{$input_file.to_s} . Does it exist?" unless $input_file.expand_path.file? && $input_file.expand_path.readable?
 
 # If basedir is not defined by input, set basedir to directory where playlist is located
 $base_dir = $input_file.expand_path.dirname if $base_dir==nil
