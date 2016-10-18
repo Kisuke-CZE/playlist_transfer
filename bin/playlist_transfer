@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+# This is script I created to put files from my Banshee managed music library to flashdrive
+# (flashdrive is used in my car radio, which reads only MP3 files and cannot read files with special characters in name)
+# It reads M3U8 playlist (defined by if=PATH_TO_PLAYLIST) and transfers files to output directory (defined by out=PATH_TO_DIRECTORY) including directory structure (Directory structure is created as relative from basedir=MUSIC_DIR)
+# If there is any FLAC file it converts it to MP3 file
+# Any other files will be just copied
+# It also removes any special characters from output file path
+require 'pathname'
+require 'm3u8'
+require 'musictrack'
+
+ARGV.each do |argument|
+  case argument
+    when /if=/
+      $input_file = Pathname.new($')
+    when /out=/
+      $output_dir = Pathname.new($')
+    when /basedir=/
+      $base_dir = Pathname.new($')
+    when /--compatible/
+      $compatible = true
+    when /--justcopy/
+      $justcopy = true
+    else
+      puts "Invalid argument #{argument}"
+    end
+end
+
+abort "Bad syntax.\nUsage: #{File.basename($0)} if=INPUT_FILE out=OUTPUT_DIR [basedir=MUSIC_DIR] [OPTIONS]
+
+Available options:
+--compatible = transfer filenames and directory names without special characters
+--justcopy = do not convert FLAC files to MP3" if $input_file==nil || $output_dir==nil
+abort "Cannot read file #{$input_file.to_s} . Does it exist?" if !$input_file.expand_path.file? || !$input_file.expand_path.readable?
+
+# If basedir is not defined by input, set basedir to directory where playlist is located
+$base_dir = $input_file.expand_path.dirname if $base_dir==nil
+
+puts "Using input file: #{$input_file.to_s}"
+puts "Output will be placed in: #{$output_dir.to_s}"
+puts "Base directory to define relative paths: #{$base_dir.to_s}"
+
+# Change workdir to directory where playlist is located. Usually playlist has paths to audio files defined as relative from its location in filesystem. If it has absolute paths, changing current workdir is not a problem.
+Dir.chdir($input_file.expand_path.dirname)
+playlist_file = File.open($input_file.expand_path)
+playlist = M3u8::Playlist.read(playlist_file)
+
+playlist.items.each do |item|
+  track_location = Pathname.new(item.segment)
+  track=MusicTrack.new(track_location,$base_dir)
+  track.transfer($output_dir, $compatible, $justcopy)
+end
+puts "Transfer complete."
