@@ -1,6 +1,6 @@
 require 'pathname'
 require 'tempfile'
-require 'musictrack/extensions'
+require 'playlist_transfer/extensions'
 
 # Class MusicTrack represents one audiofile (trackfile) in some "Music folder" (basedir).
 # trackfile and basedir are Pathnames
@@ -11,47 +11,49 @@ class MusicTrack
     @basedir = basedir.expand_path
   end
 
-# Methods flactags and encode_flac are just slightly modified methods from guy named Mathew who posted his script on github: https://gist.github.com/lpar/4645195
-# Thank you very much for this Mathew. I plan to implements these methods by myself in future. But at this time these methods solved my problem very well. I generaly like the way these methods are written.
-  def flactags(filename)
+# Methods flactags and encode_flac are highly inspired by script from guy named Mathew who posted his script on github: https://gist.github.com/lpar/4645195
+
+# Method get_tags returns an array with tags extracted from original FLAC file. Array has fields named as attributes from original file. Each field contains value of that attribute
+  def get_tags
   tmpfile = Tempfile.new('flacdata')
   system(
     'metaflac',
     "--export-tags-to=#{tmpfile.path}",
     '--no-utf8-convert',
-    filename.to_s
+    @path.to_s
   )
   data = tmpfile.open
-  info = { 'title' => '', 'artist' => '',
-  'album' => '', 'date' => '',
-  'tracknumber' => '0' }
+  tags = { 'title' => '', 'artist' => '', 'album' => '', 'date' => '', 'tracknumber' => '0' }
   while line = data.gets
     m = line.match(/^(\w+)=(.*)$/)
     if m && m[2]
-      info[m[1].downcase] = m[2]
+      tags[m[1].downcase] = m[2]
     end
   end
-  return info
+  return tags
   end
 
-  def encode_flac(filename,mp3name)
-  basename = filename.to_s.sub(/\.flac$/i, '')
-  wavname = Pathname.new("#{basename}.wav")
-  info = self.flactags(filename)
+# Method encode_flac transcodes FLAC file to MP3 file placed in output (which is passed as parameter).
+# Parameter output shoul be Pathname
+  def encode_flac(outputfile)
+  wavtemp = Tempfile.new('wavfile')
+  info = self.get_tags
   track = info['tracknumber'].gsub(/\D/,'')
   system(
     'flac',
     '-s',
     '-d',
+    '-f',
     '-o',
-    wavname.to_s,
-    filename.to_s
+    wavtemp.path,
+    @path.to_s
   )
   system(
     'lame',
     '--silent',
     '--replaygain-accurate',
     '--preset', 'cbr', '320',
+    '-m', 's',
     '-q', '0',
     '--add-id3v2',
     '--tt', info['title'],
@@ -60,19 +62,17 @@ class MusicTrack
     '--ty', info['date'],
     '--tn', track,
     '--tg', info['genre'] || 'Rock',
-    wavname.to_s,
-    mp3name.to_s
+    wavtemp.path,
+    outputfile.to_s
   )
-  FileUtils.rm(wavname)
 
-  # If encoding process is interrupted (for example by Ctrl + C), remove temporary file (and possible incomplete file in destination).
-  # Prevention for generating "randomly placed" WAV files on my harddrive
+  # If encoding process is interrupted (by pressinc Ctrl + C), remove probably incomplete file in destination.
   rescue Interrupt
-  FileUtils.rm(wavname) if wavname.file?
   FileUtils.rm(mp3name) if mp3name.file?
-  abort "Interrupted when encoding #{mp3name}. Tempfiles removed."
+  abort "Interrupted when encoding #{mp3name}. Incomplete file removed from destination."
   end
 
+  # Returns true if track type is FLAC. Identified by file extension.
   def is_flac?
     if @path.extname.downcase == ".flac"
       return true
@@ -91,7 +91,7 @@ class MusicTrack
       puts "Transfering #{outfile.to_s}"
       outfile.dirname.mkpath
       if self.is_flac? && !justcopy
-        self.encode_flac(@path.realpath,outfile)
+        self.encode_flac(outfile)
       else
         FileUtils.cp(@path.realpath,outfile)
       end
