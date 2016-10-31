@@ -5,6 +5,7 @@ require 'playlist_transfer/extensions'
 # Class MusicTrack represents one audiofile (trackfile) in some "Music folder" (basedir).
 # trackfile and basedir are Pathnames
 class MusicTrack
+  # Class MusicTrack represents one audiofile (trackfile) in some "Music folder" (basedir).
   def initialize(trackfile,basedir)
     abort "File #{trackfile.expand_path} is not located in #{basedir.expand_path}" if !trackfile.expand_path.is_child?(basedir.expand_path)
     @path = trackfile.expand_path
@@ -34,7 +35,7 @@ class MusicTrack
   end
 
 # Method encode_flac transcodes FLAC file to MP3 file placed in output (which is passed as parameter).
-# Parameter output shoul be Pathname
+# Parameter output should be Pathname
   def encode_flac(outputfile)
   wavtemp = Tempfile.new('wavfile')
   info = self.get_tags
@@ -81,8 +82,9 @@ class MusicTrack
     end
   end
 
-  # This method transfers track file destination (outfile parameter is Pathname) as MP3 file. (When it is FLAC, it converts it to MP3, other files will be just copied)
-  # It also creates directory structure (from basedir to track itself), but without special characters (Because some MP3 players have issues with reading files/folders with special characters in name)
+  # This method transfers track file to destination (outfile parameter is Pathname). (When it is FLAC, it converts it to MP3 by default, other files will be just copied).
+  # You can specify that you do not want to convert FLAC to MP3 by adding second parameter (justcopy) with value "true".
+  # It also creates directory structure (relatively from basedir to track itself) in destination.
   def filetransfer(outfile, justcopy = nil)
     abort "File #{@path.to_s} does not exist."  if !@path.file?
     outfile = outfile.sub(/\.flac$/i, '.mp3') if !justcopy
@@ -100,7 +102,9 @@ class MusicTrack
     end
   end
 
-  # Method to transfer file and it's directory structure
+  # Method to transfer file and it's directory structure to destination (output)
+  # You can specify you want to create directory srtucture in destination in "compatible" way. This means no spaces and special characters in filenames.
+  # If you do not want any conversion from FLAC to MP3, just set justcopy to true.
   def transfer(output, compatible = nil, justcopy = nil)
     abort "Can't write to #{output.to_s} or it is not directory." unless output.expand_path.directory? && output.expand_path.writable?
 
@@ -112,7 +116,7 @@ class MusicTrack
     self.filetransfer(output_file, justcopy)
   end
 
-  # Method to transfer file and it's structure in "compatible" way (file and it's directory structure with removed special characters) - just alias for transfer with proper parameter.
+  # Method to transfer file and it's structure in "compatible" way (file and it's directory structure with removed special characters) - just alias for transfer with proper parameters.
   def transfer_compatible(output, justcopy = nil)
     self.transfer(output, true, justcopy)
   end
