@@ -42,6 +42,8 @@ Script has these options:
 
 **--justcopy**  - do not convert FLAC files to MP3
 
+**--skoda**  - create M3U playlist in the root of output directory for Skoda Swing audio system compatibility. Might work for other Skoda audio systems, but tested only with Swing. This is for beeing able to shuffle all music on flashdrive. This option also automatically enables --compatible flag, because that's what Skoda audio needs.
+
 ## Requirements
 * flac binary installed
 * lame binary installed

@@ -21,6 +21,9 @@ ARGV.each do |argument|
       $compatible = true
     when /--justcopy/
       $justcopy = true
+    when /--skoda/
+      $skoda = true
+      $compatible = true
     else
       puts "Invalid argument #{argument}"
     end
@@ -30,7 +33,8 @@ abort "Bad syntax.\nUsage: #{File.basename($0)} if=INPUT_FILE out=OUTPUT_DIR [ba
 
 Available options:
 --compatible = transfer filenames and directory names without special characters
---justcopy = do not convert FLAC files to MP3" unless $input_file && $output_dir
+--justcopy = do not convert FLAC files to MP3
+--skoda = create M3U playlist in target root directory compatible with Skoda Swing car audio. This flag also automatically enables --compatible." unless $input_file && $output_dir
 abort "Cannot read file #{$input_file.to_s} . Does it exist?" unless $input_file.expand_path.file? && $input_file.expand_path.readable?
 
 # If basedir is not defined by input, set basedir to directory where playlist is located
@@ -48,6 +52,6 @@ playlist = M3u8::Playlist.read(playlist_file)
 playlist.items.each do |item|
   track_location = Pathname.new(item.segment)
   track=MusicTrack.new(track_location,$base_dir)
-  track.transfer($output_dir, $compatible, $justcopy)
+  track.transfer($output_dir, $compatible, $justcopy, $skoda)
 end
 puts "Transfer complete."

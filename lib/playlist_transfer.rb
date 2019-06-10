@@ -85,7 +85,7 @@ class MusicTrack
   # This method transfers track file to destination (outfile parameter is Pathname). (When it is FLAC, it converts it to MP3 by default, other files will be just copied).
   # You can specify that you do not want to convert FLAC to MP3 by adding second parameter (justcopy) with value "true".
   # It also creates directory structure (relatively from basedir to track itself) in destination.
-  def filetransfer(outfile, justcopy = nil)
+  def filetransfer(outfile, justcopy = nil, skoda = nil, relative_path = nil, output = nil)
     abort "File #{@path.to_s} does not exist."  if !@path.file?
     outfile = outfile.sub(/\.flac$/i, '.mp3') if !justcopy
     # If file in destination already exists in destination, skip it, no need to tranfer it.
@@ -97,6 +97,13 @@ class MusicTrack
       else
         FileUtils.cp(@path.realpath,outfile)
       end
+      # Quick and dirty fix for stuid SKODA audio system, to be able to shuffle all music on storage (Not just in folder like it usualy does)
+      if skoda
+        playlist_line = "/" + relative_path.to_s
+        open("#{output}/ALL_MUSIC.M3U", 'a') { |f|
+          f.puts playlist_line
+        }
+      end
     else
       puts "File #{outfile.to_s} already exists. Skipping..."
     end
@@ -105,7 +112,7 @@ class MusicTrack
   # Method to transfer file and it's directory structure to destination (output)
   # You can specify you want to create directory srtucture in destination in "compatible" way. This means no spaces and special characters in filenames.
   # If you do not want any conversion from FLAC to MP3, just set justcopy to true.
-  def transfer(output, compatible = nil, justcopy = nil)
+  def transfer(output, compatible = nil, justcopy = nil, skoda = nil)
     abort "Can't write to #{output.to_s} or it is not directory." unless output.expand_path.directory? && output.expand_path.writable?
 
     # Next 3 lines just creates complete destination path for transfered track (combining desired output directory, current track location, and basedir). It also removes special characters if necessary.
@@ -113,7 +120,7 @@ class MusicTrack
     relative_path = relative_path.no_special_chars if compatible
     output_file = output.expand_path + relative_path
 
-    self.filetransfer(output_file, justcopy)
+    self.filetransfer(output_file, justcopy, skoda, relative_path, output.expand_path)
   end
 
   # Method to transfer file and it's structure in "compatible" way (file and it's directory structure with removed special characters) - just alias for transfer with proper parameters.
