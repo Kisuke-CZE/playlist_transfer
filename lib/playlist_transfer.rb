@@ -69,8 +69,8 @@ class MusicTrack
 
   # If encoding process is interrupted (by pressinc Ctrl + C), remove probably incomplete file in destination.
   rescue Interrupt
-  FileUtils.rm(mp3name) if mp3name.file?
-  abort "Interrupted when encoding #{mp3name}. Incomplete file removed from destination."
+  FileUtils.rm(outputfile) if outputfile.file?
+  abort "Interrupted when encoding #{outputfile}. Incomplete file removed from destination."
   end
 
   # Returns true if track type is FLAC. Identified by file extension.
